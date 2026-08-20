@@ -321,11 +321,15 @@ function Jobs() {
                         <Paper
                             key={app.id}
                             elevation={0}
+                            onClick={() =>
+                                navigate(`/jobs/edit/${app.id}`)
+                            }
                             sx={{
                                 p: 2.5,
                                 border: '1px solid #e5e7eb',
                                 borderRadius: 3,
                                 transition: 'all 0.2s ease',
+                                cursor: 'pointer',
                                 '&:hover': {
                                     transform: 'translateY(-3px)',
                                     boxShadow:
@@ -376,6 +380,9 @@ function Jobs() {
                                             href={app.url}
                                             target="_blank"
                                             rel="noopener noreferrer"
+                                            onClick={(e) =>
+                                                e.stopPropagation()
+                                            }
                                         >
                                             <OpenInNewIcon fontSize="small" />
                                         </IconButton>
@@ -450,9 +457,12 @@ function Jobs() {
                                     size="small"
                                     variant="outlined"
                                     startIcon={<EditIcon />}
-                                    onClick={() =>
-                                        navigate(`/jobs/edit/${app.id}`)
-                                    }
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        navigate(
+                                            `/jobs/edit/${app.id}?edit=true`
+                                        )
+                                    }}
                                 >
                                     Edit
                                 </Button>
@@ -463,7 +473,10 @@ function Jobs() {
                                     variant="outlined"
                                     color="error"
                                     startIcon={<DeleteIcon />}
-                                    onClick={() => handleDelete(app.id)}
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleDelete(app.id)
+                                    }}
                                 >
                                     Delete
                                 </Button>

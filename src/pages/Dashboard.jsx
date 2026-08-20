@@ -330,6 +330,11 @@ function Dashboard() {
                                 .map((interview) => (
                                     <Box
                                         key={interview.id}
+                                        onClick={() =>
+                                            navigate(
+                                                `/jobs/edit/${interview.application}`
+                                            )
+                                        }
                                         sx={{
                                             p: 1.8,
                                             borderRadius: 2,
@@ -337,6 +342,11 @@ function Dashboard() {
                                             display: 'flex',
                                             justifyContent: 'space-between',
                                             gap: 2,
+                                            cursor: 'pointer',
+                                            transition: 'background 0.15s ease',
+                                            '&:hover': {
+                                                background: '#eef2ff',
+                                            },
                                         }}
                                     >
                                         <Box sx={{ minWidth: 0 }}>

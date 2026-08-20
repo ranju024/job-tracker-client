@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import api from '../services/api'
 
 import {
@@ -14,9 +14,12 @@ import {
     CircularProgress,
     IconButton,
     Divider,
+    Chip,
 } from '@mui/material'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined'
 import AddIcon from '@mui/icons-material/Add'
+import EditIcon from '@mui/icons-material/Edit'
+import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 
 const interviewTypes = [
     ['phone', 'Phone'],
@@ -39,10 +42,25 @@ const statuses = [
     ['withdrawn', 'Withdrawn'],
 ]
 
+const statusStyles = {
+    applied: { color: '#2563eb', background: '#eff6ff' },
+    screening: { color: '#7c3aed', background: '#f5f3ff' },
+    interviewing: { color: '#0891b2', background: '#ecfeff' },
+    offered: { color: '#15803d', background: '#f0fdf4' },
+    rejected: { color: '#dc2626', background: '#fef2f2' },
+    ghosted: { color: '#6b7280', background: '#f3f4f6' },
+    withdrawn: { color: '#c2410c', background: '#fff7ed' },
+}
+
 
 function EditJob() {
     const { id } = useParams()
     const navigate = useNavigate()
+    const [searchParams, setSearchParams] = useSearchParams()
+
+    const [isEditing, setIsEditing] = useState(
+        searchParams.get('edit') === 'true'
+    )
 
     const [company, setCompany] = useState('')
     const [title, setTitle] = useState('')
@@ -106,7 +124,8 @@ function EditJob() {
                 date_applied,
             })
 
-            navigate('/jobs')
+            setIsEditing(false)
+            setSearchParams({})
         } catch (error) {
             setError('Could not update the application.')
         } finally {
@@ -169,14 +188,41 @@ function EditJob() {
 
     return (
         <Container maxWidth="md" sx={{ py: { xs: 3, sm: 5 } }}>
-            <Box sx={{ mb: 3 }}>
-                <Typography variant="h4" sx={{ fontWeight: 800 }}>
-                    Edit application
-                </Typography>
+            <Box
+                sx={{
+                    mb: 3,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: 2,
+                }}
+            >
+                <Box>
+                    <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                        {isEditing ? 'Edit application' : 'Application details'}
+                    </Typography>
 
-                <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-                    Update your application details.
-                </Typography>
+                    <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+                        {isEditing
+                            ? 'Update your application details.'
+                            : "Here's what you've saved for this application."}
+                    </Typography>
+                </Box>
+
+                {!isEditing && (
+                    <Button
+                        variant="outlined"
+                        startIcon={<EditIcon />}
+                        onClick={() => {
+                            setIsEditing(true)
+                            setSearchParams({ edit: 'true' })
+                        }}
+                        sx={{ fontWeight: 700 }}
+                    >
+                        Edit
+                    </Button>
+                )}
             </Box>
 
             <Paper
@@ -193,6 +239,138 @@ function EditJob() {
                     </Alert>
                 )}
 
+                {!isEditing ? (
+                    <Box
+                        sx={{
+                            display: 'grid',
+                            gridTemplateColumns: {
+                                xs: '1fr',
+                                sm: '1fr 1fr',
+                            },
+                            gap: 2.5,
+                        }}
+                    >
+                        <Box>
+                            <Typography
+                                variant="body2"
+                                color="text.secondary"
+                            >
+                                Company
+                            </Typography>
+                            <Typography sx={{ fontWeight: 600, mt: 0.3 }}>
+                                {company}
+                            </Typography>
+                        </Box>
+
+                        <Box>
+                            <Typography
+                                variant="body2"
+                                color="text.secondary"
+                            >
+                                Job title
+                            </Typography>
+                            <Typography sx={{ fontWeight: 600, mt: 0.3 }}>
+                                {title}
+                            </Typography>
+                        </Box>
+
+                        <Box>
+                            <Typography
+                                variant="body2"
+                                color="text.secondary"
+                            >
+                                Job URL
+                            </Typography>
+                            {url ? (
+                                <Typography
+                                    component="a"
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    sx={{
+                                        fontWeight: 600,
+                                        mt: 0.3,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 0.5,
+                                        color: '#4f46e5',
+                                        textDecoration: 'none',
+                                    }}
+                                >
+                                    Open posting
+                                    <OpenInNewIcon
+                                        sx={{ fontSize: 16 }}
+                                    />
+                                </Typography>
+                            ) : (
+                                <Typography
+                                    sx={{ fontWeight: 600, mt: 0.3 }}
+                                    color="text.secondary"
+                                >
+                                    Not provided
+                                </Typography>
+                            )}
+                        </Box>
+
+                        <Box>
+                            <Typography
+                                variant="body2"
+                                color="text.secondary"
+                            >
+                                Status
+                            </Typography>
+                            <Chip
+                                label={
+                                    statuses.find(
+                                        ([value]) => value === status
+                                    )?.[1] || status
+                                }
+                                size="small"
+                                sx={{
+                                    mt: 0.5,
+                                    fontWeight: 700,
+                                    color:
+                                        statusStyles[status]?.color ||
+                                        '#374151',
+                                    background:
+                                        statusStyles[status]?.background ||
+                                        '#f3f4f6',
+                                }}
+                            />
+                        </Box>
+
+                        <Box>
+                            <Typography
+                                variant="body2"
+                                color="text.secondary"
+                            >
+                                Date applied
+                            </Typography>
+                            <Typography sx={{ fontWeight: 600, mt: 0.3 }}>
+                                {date_applied}
+                            </Typography>
+                        </Box>
+
+                        <Box sx={{ gridColumn: { sm: '1 / -1' } }}>
+                            <Typography
+                                variant="body2"
+                                color="text.secondary"
+                            >
+                                Notes
+                            </Typography>
+                            <Typography
+                                sx={{
+                                    fontWeight: 500,
+                                    mt: 0.3,
+                                    whiteSpace: 'pre-wrap',
+                                }}
+                                color={notes ? 'inherit' : 'text.secondary'}
+                            >
+                                {notes || 'No notes added.'}
+                            </Typography>
+                        </Box>
+                    </Box>
+                ) : (
                 <Box component="form" onSubmit={handleSubmit}>
                     <Box
                         sx={{
@@ -273,7 +451,10 @@ function EditJob() {
                     >
                         <Button
                             variant="outlined"
-                            onClick={() => navigate('/jobs')}
+                            onClick={() => {
+                                setIsEditing(false)
+                                setSearchParams({})
+                            }}
                         >
                             Cancel
                         </Button>
@@ -300,54 +481,45 @@ function EditJob() {
                         </Button>
                     </Box>
                 </Box>
+                )}
             </Paper>
 
-            <Paper
-                elevation={0}
-                sx={{
-                    p: { xs: 2.5, sm: 4 },
-                    borderRadius: 3,
-                    border: '1px solid #e5e7eb',
-                    mt: 3,
-                }}
-            >
-                <Box
+            {(canScheduleInterview || interviews.length > 0) && (
+                <Paper
+                    elevation={0}
                     sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        mb: 1,
+                        p: { xs: 2.5, sm: 4 },
+                        borderRadius: 3,
+                        border: '1px solid #e5e7eb',
+                        mt: 3,
                     }}
                 >
-                    <Typography variant="h6" sx={{ fontWeight: 750 }}>
-                        Interviews
-                    </Typography>
-
-                    {canScheduleInterview && !showInterviewForm && (
-                        <Button
-                            size="small"
-                            startIcon={<AddIcon />}
-                            onClick={() => setShowInterviewForm(true)}
-                            sx={{ fontWeight: 700 }}
-                        >
-                            Schedule interview
-                        </Button>
-                    )}
-                </Box>
-
-                {!canScheduleInterview && (
-                    <Typography
-                        color="text.secondary"
-                        variant="body2"
-                        sx={{ mb: 2 }}
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            mb: 1,
+                        }}
                     >
-                        Interviews can be scheduled once the status is
-                        Screening, Interviewing, or Offered.
-                    </Typography>
-                )}
+                        <Typography variant="h6" sx={{ fontWeight: 750 }}>
+                            Interviews
+                        </Typography>
 
-                {interviewError && (
-                    <Alert severity="error" sx={{ mb: 2 }}>
+                        {isEditing && canScheduleInterview && !showInterviewForm && (
+                            <Button
+                                size="small"
+                                startIcon={<AddIcon />}
+                                onClick={() => setShowInterviewForm(true)}
+                                sx={{ fontWeight: 700 }}
+                            >
+                                Schedule interview
+                            </Button>
+                        )}
+                    </Box>
+
+                    {interviewError && (
+                        <Alert severity="error" sx={{ mb: 2 }}>
                         {interviewError}
                     </Alert>
                 )}
@@ -407,14 +579,18 @@ function EditJob() {
                                     </Typography>
                                 </Box>
 
-                                <IconButton
-                                    size="small"
-                                    onClick={() =>
-                                        handleDeleteInterview(interview.id)
-                                    }
-                                >
-                                    <DeleteOutlineIcon fontSize="small" />
-                                </IconButton>
+                                {isEditing && (
+                                    <IconButton
+                                        size="small"
+                                        onClick={() =>
+                                            handleDeleteInterview(
+                                                interview.id
+                                            )
+                                        }
+                                    >
+                                        <DeleteOutlineIcon fontSize="small" />
+                                    </IconButton>
+                                )}
                             </Box>
                         ))}
                     </Box>
@@ -526,7 +702,8 @@ function EditJob() {
                         </Box>
                     </Box>
                 )}
-            </Paper>
+                </Paper>
+            )}
         </Container>
     )
 }
