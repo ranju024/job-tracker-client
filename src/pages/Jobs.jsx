@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import api from '../services/api'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import {
     Box,
@@ -29,10 +29,12 @@ import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import SearchIcon from '@mui/icons-material/Search'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 
 
 const statuses = [
     ['', 'All statuses'],
+    ['active', 'Active'],
     ['applied', 'Applied'],
     ['screening', 'Screening'],
     ['interviewing', 'Interviewing'],
@@ -118,13 +120,20 @@ function StatusChip({ status }) {
 
 
 function Jobs() {
+    const [searchParams, setSearchParams] = useSearchParams()
+
     const [applications, setApplications] = useState([])
     const [loading, setLoading] = useState(true)
-    const [selectedStatus, setSelectedStatus] = useState('')
+    const [selectedStatus, setSelectedStatus] = useState(
+        searchParams.get('status') || ''
+    )
     const [selectedWorkType, setSelectedWorkType] = useState('')
     const [searchInput, setSearchInput] = useState('')
     const [search, setSearch] = useState('')
     const [error, setError] = useState('')
+
+    const upcomingOnly = searchParams.get('upcoming_interview') === 'true'
+    const staleOnly = searchParams.get('stale') === 'true'
 
     const [page, setPage] = useState(1)
     const [pageCount, setPageCount] = useState(1)
@@ -134,6 +143,26 @@ function Jobs() {
     const [deleting, setDeleting] = useState(false)
 
     const navigate = useNavigate()
+
+    // Distinguishes "the user just changed a filter on this page" from
+    // "we were navigated here fresh from somewhere else (e.g. a Dashboard
+    // stat card)". Only the latter should wipe leftover filters — otherwise
+    // changing the status dropdown would also clear the search box.
+    const isInternalUpdate = useRef(false)
+
+    // Keep the filter in sync if the URL's query params change
+    // (e.g. clicking a different Dashboard stat while already on this page).
+    useEffect(() => {
+        setSelectedStatus(searchParams.get('status') || '')
+
+        if (!isInternalUpdate.current) {
+            setSelectedWorkType('')
+            setSearchInput('')
+            setSearch('')
+        }
+
+        isInternalUpdate.current = false
+    }, [searchParams])
 
     // Debounce the search box so we don't fire a request on every keystroke.
     useEffect(() => {
@@ -147,7 +176,7 @@ function Jobs() {
 
     useEffect(() => {
         setPage(1)
-    }, [selectedStatus, selectedWorkType])
+    }, [selectedStatus, selectedWorkType, upcomingOnly, staleOnly])
 
     const fetchApplications = useCallback(async () => {
         try {
@@ -158,6 +187,8 @@ function Jobs() {
             if (selectedStatus) params.status = selectedStatus
             if (selectedWorkType) params.work_type = selectedWorkType
             if (search) params.search = search
+            if (upcomingOnly) params.upcoming_interview = 'true'
+            if (staleOnly) params.stale = 'true'
 
             const response = await api.get('/api/jobs/', { params })
             const data = response.data
@@ -178,7 +209,7 @@ function Jobs() {
         } finally {
             setLoading(false)
         }
-    }, [page, selectedStatus, selectedWorkType, search])
+    }, [page, selectedStatus, selectedWorkType, search, upcomingOnly, staleOnly])
 
     useEffect(() => {
         fetchApplications()
@@ -223,20 +254,34 @@ function Jobs() {
                     mb: 3,
                 }}
             >
-                <Box>
-                    <Typography
-                        variant="h4"
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                    <IconButton
+                        onClick={() => navigate(-1)}
                         sx={{
-                            fontWeight: 800,
-                            letterSpacing: '-0.5px',
+                            mt: 0.5,
+                            border: '1px solid #e5e7eb',
+                            borderRadius: 2,
                         }}
+                        aria-label="Go back"
                     >
-                        Applications
-                    </Typography>
+                        <ArrowBackIcon />
+                    </IconButton>
 
-                    <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-                        Keep track of every opportunity in one place.
-                    </Typography>
+                    <Box>
+                        <Typography
+                            variant="h4"
+                            sx={{
+                                fontWeight: 800,
+                                letterSpacing: '-0.5px',
+                            }}
+                        >
+                            Applications
+                        </Typography>
+
+                        <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+                            Keep track of every opportunity in one place.
+                        </Typography>
+                    </Box>
                 </Box>
 
                 <Button
@@ -300,7 +345,15 @@ function Jobs() {
                         select
                         label="Status"
                         value={selectedStatus}
-                        onChange={(e) => setSelectedStatus(e.target.value)}
+                        onChange={(e) => {
+                            const value = e.target.value
+                            setSelectedStatus(value)
+
+                            isInternalUpdate.current = true
+                            const next = {}
+                            if (value) next.status = value
+                            setSearchParams(next)
+                        }}
                         size="small"
                         sx={{
                             minWidth: { xs: '100%', sm: 180 },
@@ -340,6 +393,38 @@ function Jobs() {
                     </Typography>
                 </Box>
             </Paper>
+
+            {upcomingOnly && (
+                <Chip
+                    label="Showing applications with an upcoming interview"
+                    onDelete={() => {
+                        isInternalUpdate.current = true
+                        setSearchParams({})
+                    }}
+                    sx={{
+                        mb: 3,
+                        fontWeight: 600,
+                        color: '#4f46e5',
+                        background: '#eef2ff',
+                    }}
+                />
+            )}
+
+            {staleOnly && (
+                <Chip
+                    label="Showing applications needing attention (no update in 15+ days)"
+                    onDelete={() => {
+                        isInternalUpdate.current = true
+                        setSearchParams({})
+                    }}
+                    sx={{
+                        mb: 3,
+                        fontWeight: 600,
+                        color: '#b45309',
+                        background: '#fffbeb',
+                    }}
+                />
+            )}
 
 
             {error && (

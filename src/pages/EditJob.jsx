@@ -20,6 +20,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined'
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 
 const interviewTypes = [
     ['phone', 'Phone'],
@@ -232,16 +233,30 @@ function EditJob() {
                     gap: 2,
                 }}
             >
-                <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 800 }}>
-                        {isEditing ? 'Edit application' : 'Application details'}
-                    </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                    <IconButton
+                        onClick={() => navigate(-1)}
+                        sx={{
+                            mt: 0.5,
+                            border: '1px solid #e5e7eb',
+                            borderRadius: 2,
+                        }}
+                        aria-label="Go back"
+                    >
+                        <ArrowBackIcon />
+                    </IconButton>
 
-                    <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-                        {isEditing
-                            ? 'Update your application details.'
-                            : "Here's what you've saved for this application."}
-                    </Typography>
+                    <Box>
+                        <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                            {isEditing ? 'Edit application' : 'Application details'}
+                        </Typography>
+
+                        <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+                            {isEditing
+                                ? 'Update your application details.'
+                                : "Here's what you've saved for this application."}
+                        </Typography>
+                    </Box>
                 </Box>
 
                 {!isEditing && (

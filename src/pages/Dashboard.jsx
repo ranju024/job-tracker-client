@@ -169,30 +169,37 @@ function Dashboard() {
                     label="Total applications"
                     value={totalCount}
                     icon={<WorkIcon />}
+                    onClick={() => navigate('/jobs')}
                 />
 
                 <StatCard
                     label="Active applications"
                     value={activeCount}
                     icon={<WorkIcon />}
+                    onClick={() => navigate('/jobs?status=active')}
                 />
 
                 <StatCard
                     label="Upcoming interviews"
                     value={stats.upcoming_interviews.length}
                     icon={<EventOutlinedIcon />}
+                    onClick={() =>
+                        navigate('/jobs?upcoming_interview=true')
+                    }
                 />
 
                 <StatCard
                     label="Offers"
                     value={offeredCount}
                     icon={<WorkIcon />}
+                    onClick={() => navigate('/jobs?status=offered')}
                 />
 
                 <StatCard
                     label="Rejected"
                     value={rejectedCount}
                     icon={<WorkIcon />}
+                    onClick={() => navigate('/jobs?status=rejected')}
                 />
 
                 <StatCard
@@ -432,20 +439,33 @@ function Dashboard() {
                         sx={{
                             display: 'flex',
                             alignItems: 'center',
+                            justifyContent: 'space-between',
                             gap: 1,
                             mb: 2,
                         }}
                     >
-                        <WarningAmberOutlinedIcon
-                            sx={{ color: '#f59e0b' }}
-                        />
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <WarningAmberOutlinedIcon
+                                sx={{ color: '#f59e0b' }}
+                            />
 
-                        <Typography
-                            variant="h6"
-                            sx={{ fontWeight: 750 }}
-                        >
-                            Applications needing attention
-                        </Typography>
+                            <Typography
+                                variant="h6"
+                                sx={{ fontWeight: 750 }}
+                            >
+                                Applications needing attention
+                            </Typography>
+                        </Box>
+
+                        {stats.stale_applications.length >= 10 && (
+                            <Button
+                                size="small"
+                                onClick={() => navigate('/jobs?stale=true')}
+                                sx={{ fontWeight: 700 }}
+                            >
+                                View all
+                            </Button>
+                        )}
                     </Box>
 
                     {stats.stale_applications.length === 0 ? (
@@ -469,10 +489,19 @@ function Dashboard() {
                                 .map((app) => (
                                     <Box
                                         key={app.id}
+                                        onClick={() =>
+                                            navigate(`/jobs/edit/${app.id}`)
+                                        }
                                         sx={{
                                             p: 2,
                                             border: '1px solid #f1f5f9',
                                             borderRadius: 2,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.15s ease',
+                                            '&:hover': {
+                                                borderColor: '#fcd34d',
+                                                background: '#fffbeb',
+                                            },
                                         }}
                                     >
                                         <Typography
@@ -509,10 +538,11 @@ function Dashboard() {
 }
 
 
-function StatCard({ label, value, icon }) {
+function StatCard({ label, value, icon, onClick }) {
     return (
         <Paper
             elevation={0}
+            onClick={onClick}
             sx={{
                 p: 2.5,
                 border: '1px solid #e5e7eb',
@@ -520,6 +550,15 @@ function StatCard({ label, value, icon }) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 2,
+                cursor: onClick ? 'pointer' : 'default',
+                transition: 'all 0.2s ease',
+                ...(onClick && {
+                    '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 12px 30px rgba(15, 23, 42, 0.08)',
+                        borderColor: '#c7d2fe',
+                    },
+                }),
             }}
         >
             <Box
