@@ -1,4 +1,4 @@
-# **Job Tracker Client**
+# Job Tracker Client
 
 React frontend for the Job Application Tracker. Connects to a Django REST API backend.
 
@@ -11,15 +11,31 @@ React frontend for the Job Application Tracker. Connects to a Django REST API ba
 - Material UI
 - Axios
 - React Router
-- Tailwind CSS
 
 ## Features
 
-- User registration and login
-- JWT authentication with protected routes
-- Job applications list with status filtering
-- Add, edit, delete job applications
-- Dashboard with stats
+- User registration and login, with JWT authentication and protected routes
+- Job applications list with search, status filtering (including an "Active"
+  filter), and work-type filtering
+- Application detail page with a read-only view by default, an explicit Edit
+  button switches to an editable form, so nothing changes unless you choose to
+  edit
+- Back button (browser history) on the applications list and the application
+  detail page
+- Add, edit, and delete job applications, including company, title, URL,
+  location, work type, salary range, source, status, and notes
+- Interview scheduling per application (type, date/time, meeting link,
+  location), only offered once an application reaches Screening,
+  Interviewing, or Offered
+- Dashboard with clickable stats: Total, Active, Upcoming interviews,
+  Offers, and Rejected each deep-link to the applications list pre-filtered
+  to match
+- Dashboard "Upcoming interviews" list links straight through to the
+  matching application
+- Dashboard "Applications needing attention" section flags active
+  applications with no update in 15+ days, each clickable through to that
+  application, with a "View all" link to the filtered list once there are
+  more than can fit on the dashboard
 
 ## Project Structure
 
@@ -69,6 +85,9 @@ For local development against the Django API:
 VITE_API_URL=http://127.0.0.1:8000
 ```
 
+Vite only reads `.env` at startup, so restart the dev server after changing
+it since saving the file alone won't apply the change.
+
 Start the dev server:
 
 ```bash
@@ -88,4 +107,5 @@ npm run dev
 
 Deployed on Vercel: https://job-tracker-client-nine.vercel.app/dashboard
 
-Set `VITE_API_URL` as an environment variable in the Vercel project settings, pointing to the deployed backend API URL.
+Set `VITE_API_URL` as an environment variable in the Vercel project
+settings, pointing to the deployed backend API URL.
