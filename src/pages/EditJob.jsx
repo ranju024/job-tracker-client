@@ -42,6 +42,15 @@ const statuses = [
     ['withdrawn', 'Withdrawn'],
 ]
 
+const workTypes = [
+    ['', 'Not specified'],
+    ['remote', 'Remote'],
+    ['hybrid', 'Hybrid'],
+    ['onsite', 'On-site'],
+]
+
+const workTypeLabels = Object.fromEntries(workTypes)
+
 const statusStyles = {
     applied: { color: '#2563eb', background: '#eff6ff' },
     screening: { color: '#7c3aed', background: '#f5f3ff' },
@@ -65,6 +74,11 @@ function EditJob() {
     const [company, setCompany] = useState('')
     const [title, setTitle] = useState('')
     const [url, setUrl] = useState('')
+    const [location, setLocation] = useState('')
+    const [workType, setWorkType] = useState('')
+    const [salaryMin, setSalaryMin] = useState('')
+    const [salaryMax, setSalaryMax] = useState('')
+    const [source, setSource] = useState('')
     const [status, setStatus] = useState('')
     const [notes, setNotes] = useState('')
     const [date_applied, setDateApplied] = useState('')
@@ -94,6 +108,11 @@ function EditJob() {
                 setCompany(job.company || '')
                 setTitle(job.title || '')
                 setUrl(job.url || '')
+                setLocation(job.location || '')
+                setWorkType(job.work_type || '')
+                setSalaryMin(job.salary_min ?? '')
+                setSalaryMax(job.salary_max ?? '')
+                setSource(job.source || '')
                 setStatus(job.status || 'applied')
                 setNotes(job.notes || '')
                 setDateApplied(job.date_applied || '')
@@ -112,6 +131,16 @@ function EditJob() {
         e.preventDefault()
 
         setError('')
+
+        if (
+            salaryMin &&
+            salaryMax &&
+            Number(salaryMin) > Number(salaryMax)
+        ) {
+            setError('Minimum salary cannot be greater than maximum salary.')
+            return
+        }
+
         setSaving(true)
 
         try {
@@ -119,6 +148,11 @@ function EditJob() {
                 company,
                 title,
                 url: url || null,
+                location: location || '',
+                work_type: workType || '',
+                salary_min: salaryMin || null,
+                salary_max: salaryMax || null,
+                source: source || '',
                 status,
                 notes: notes || null,
                 date_applied,
@@ -351,6 +385,78 @@ function EditJob() {
                             </Typography>
                         </Box>
 
+                        <Box>
+                            <Typography
+                                variant="body2"
+                                color="text.secondary"
+                            >
+                                Location
+                            </Typography>
+                            <Typography
+                                sx={{ fontWeight: 600, mt: 0.3 }}
+                                color={
+                                    location ? 'inherit' : 'text.secondary'
+                                }
+                            >
+                                {location || 'Not provided'}
+                            </Typography>
+                        </Box>
+
+                        <Box>
+                            <Typography
+                                variant="body2"
+                                color="text.secondary"
+                            >
+                                Work type
+                            </Typography>
+                            <Typography
+                                sx={{ fontWeight: 600, mt: 0.3 }}
+                                color={
+                                    workType ? 'inherit' : 'text.secondary'
+                                }
+                            >
+                                {workTypeLabels[workType] || 'Not specified'}
+                            </Typography>
+                        </Box>
+
+                        <Box>
+                            <Typography
+                                variant="body2"
+                                color="text.secondary"
+                            >
+                                Salary range
+                            </Typography>
+                            <Typography
+                                sx={{ fontWeight: 600, mt: 0.3 }}
+                                color={
+                                    salaryMin || salaryMax
+                                        ? 'inherit'
+                                        : 'text.secondary'
+                                }
+                            >
+                                {salaryMin || salaryMax
+                                    ? `${salaryMin || '?'} – ${
+                                          salaryMax || '?'
+                                      }`
+                                    : 'Not provided'}
+                            </Typography>
+                        </Box>
+
+                        <Box>
+                            <Typography
+                                variant="body2"
+                                color="text.secondary"
+                            >
+                                Source
+                            </Typography>
+                            <Typography
+                                sx={{ fontWeight: 600, mt: 0.3 }}
+                                color={source ? 'inherit' : 'text.secondary'}
+                            >
+                                {source || 'Not provided'}
+                            </Typography>
+                        </Box>
+
                         <Box sx={{ gridColumn: { sm: '1 / -1' } }}>
                             <Typography
                                 variant="body2"
@@ -406,6 +512,34 @@ function EditJob() {
                         />
 
                         <TextField
+                            label="Location"
+                            value={location}
+                            onChange={(e) => setLocation(e.target.value)}
+                            fullWidth
+                        />
+
+                        <TextField
+                            select
+                            label="Work type"
+                            value={workType}
+                            onChange={(e) => setWorkType(e.target.value)}
+                            fullWidth
+                        >
+                            {workTypes.map(([value, label]) => (
+                                <MenuItem key={value} value={value}>
+                                    {label}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+
+                        <TextField
+                            label="Source"
+                            value={source}
+                            onChange={(e) => setSource(e.target.value)}
+                            fullWidth
+                        />
+
+                        <TextField
                             select
                             label="Status"
                             value={status}
@@ -427,6 +561,24 @@ function EditJob() {
                             onChange={(e) => setDateApplied(e.target.value)}
                             fullWidth
                             InputLabelProps={{ shrink: true }}
+                        />
+
+                        <TextField
+                            label="Minimum salary"
+                            type="number"
+                            value={salaryMin}
+                            onChange={(e) => setSalaryMin(e.target.value)}
+                            fullWidth
+                            inputProps={{ min: 0, step: '0.01' }}
+                        />
+
+                        <TextField
+                            label="Maximum salary"
+                            type="number"
+                            value={salaryMax}
+                            onChange={(e) => setSalaryMax(e.target.value)}
+                            fullWidth
+                            inputProps={{ min: 0, step: '0.01' }}
                         />
 
                         <TextField

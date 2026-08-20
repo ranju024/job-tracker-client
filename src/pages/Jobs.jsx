@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import api from '../services/api'
 import { useNavigate } from 'react-router-dom'
 
@@ -15,12 +15,20 @@ import {
     Alert,
     IconButton,
     Tooltip,
+    Pagination,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions,
+    InputAdornment,
 } from '@mui/material'
 
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+import SearchIcon from '@mui/icons-material/Search'
 
 
 const statuses = [
@@ -32,6 +40,13 @@ const statuses = [
     ['rejected', 'Rejected'],
     ['ghosted', 'Ghosted'],
     ['withdrawn', 'Withdrawn'],
+]
+
+const workTypes = [
+    ['', 'All work types'],
+    ['remote', 'Remote'],
+    ['hybrid', 'Hybrid'],
+    ['onsite', 'On-site'],
 ]
 
 
@@ -106,46 +121,92 @@ function Jobs() {
     const [applications, setApplications] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedStatus, setSelectedStatus] = useState('')
+    const [selectedWorkType, setSelectedWorkType] = useState('')
+    const [searchInput, setSearchInput] = useState('')
+    const [search, setSearch] = useState('')
     const [error, setError] = useState('')
+
+    const [page, setPage] = useState(1)
+    const [pageCount, setPageCount] = useState(1)
+    const [totalCount, setTotalCount] = useState(0)
+
+    const [deleteTarget, setDeleteTarget] = useState(null)
+    const [deleting, setDeleting] = useState(false)
 
     const navigate = useNavigate()
 
+    // Debounce the search box so we don't fire a request on every keystroke.
     useEffect(() => {
-        fetchApplications()
-    }, [selectedStatus])
+        const timeout = setTimeout(() => {
+            setSearch(searchInput)
+            setPage(1)
+        }, 400)
 
-    const fetchApplications = async () => {
+        return () => clearTimeout(timeout)
+    }, [searchInput])
+
+    useEffect(() => {
+        setPage(1)
+    }, [selectedStatus, selectedWorkType])
+
+    const fetchApplications = useCallback(async () => {
         try {
             setLoading(true)
             setError('')
 
-            const url = selectedStatus
-                ? `/api/jobs/?status=${selectedStatus}`
-                : '/api/jobs/'
+            const params = { page }
+            if (selectedStatus) params.status = selectedStatus
+            if (selectedWorkType) params.work_type = selectedWorkType
+            if (search) params.search = search
 
-            const response = await api.get(url)
+            const response = await api.get('/api/jobs/', { params })
+            const data = response.data
 
-            setApplications(response.data.results || response.data || [])
+            if (Array.isArray(data)) {
+                // Fallback in case pagination is ever disabled server-side.
+                setApplications(data)
+                setTotalCount(data.length)
+                setPageCount(1)
+            } else {
+                setApplications(data.results || [])
+                setTotalCount(data.count || 0)
+                setPageCount(Math.max(1, Math.ceil((data.count || 0) / 10)))
+            }
         } catch (error) {
             console.error('Error fetching applications:', error)
             setError('Could not load your applications.')
         } finally {
             setLoading(false)
         }
+    }, [page, selectedStatus, selectedWorkType, search])
+
+    useEffect(() => {
+        fetchApplications()
+    }, [fetchApplications])
+
+    const confirmDelete = (app) => {
+        setDeleteTarget(app)
     }
 
-    const handleDelete = async (id) => {
-        const confirmed = window.confirm(
-            'Are you sure you want to delete this application?'
-        )
+    const cancelDelete = () => {
+        if (deleting) return
+        setDeleteTarget(null)
+    }
 
-        if (!confirmed) return
+    const handleDelete = async () => {
+        if (!deleteTarget) return
+
+        setDeleting(true)
 
         try {
-            await api.delete(`/api/jobs/${id}/`)
+            await api.delete(`/api/jobs/${deleteTarget.id}/`)
+            setDeleteTarget(null)
             fetchApplications()
         } catch (error) {
             setError('Could not delete the application.')
+            setDeleteTarget(null)
+        } finally {
+            setDeleting(false)
         }
     }
 
@@ -216,13 +277,33 @@ function Jobs() {
                     }}
                 >
                     <TextField
+                        placeholder="Search company or title"
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                        size="small"
+                        sx={{
+                            minWidth: { xs: '100%', sm: 240 },
+                        }}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon
+                                        fontSize="small"
+                                        sx={{ color: '#9ca3af' }}
+                                    />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+
+                    <TextField
                         select
-                        label="Filter by status"
+                        label="Status"
                         value={selectedStatus}
                         onChange={(e) => setSelectedStatus(e.target.value)}
                         size="small"
                         sx={{
-                            minWidth: { xs: '100%', sm: 220 },
+                            minWidth: { xs: '100%', sm: 180 },
                         }}
                     >
                         {statuses.map(([value, label]) => (
@@ -232,18 +313,34 @@ function Jobs() {
                         ))}
                     </TextField>
 
+                    <TextField
+                        select
+                        label="Work type"
+                        value={selectedWorkType}
+                        onChange={(e) => setSelectedWorkType(e.target.value)}
+                        size="small"
+                        sx={{
+                            minWidth: { xs: '100%', sm: 180 },
+                        }}
+                    >
+                        {workTypes.map(([value, label]) => (
+                            <MenuItem key={value} value={value}>
+                                {label}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+
                     <Typography
                         variant="body2"
                         color="text.secondary"
-                        sx={{ ml: { sm: 'auto' } }}
+                        sx={{ ml: { sm: 'auto' }, whiteSpace: 'nowrap' }}
                     >
-                        {applications.length}{' '}
-                        {applications.length === 1
-                            ? 'application'
-                            : 'applications'}
+                        {totalCount}{' '}
+                        {totalCount === 1 ? 'application' : 'applications'}
                     </Typography>
                 </Box>
             </Paper>
+
 
             {error && (
                 <Alert severity="error" sx={{ mb: 3 }}>
@@ -475,7 +572,7 @@ function Jobs() {
                                     startIcon={<DeleteIcon />}
                                     onClick={(e) => {
                                         e.stopPropagation()
-                                        handleDelete(app.id)
+                                        confirmDelete(app)
                                     }}
                                 >
                                     Delete
@@ -485,6 +582,61 @@ function Jobs() {
                     ))}
                 </Box>
             )}
+
+            {!loading && pageCount > 1 && (
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        mt: 4,
+                    }}
+                >
+                    <Pagination
+                        page={page}
+                        count={pageCount}
+                        onChange={(e, value) => setPage(value)}
+                        shape="rounded"
+                        color="primary"
+                    />
+                </Box>
+            )}
+
+            <Dialog open={!!deleteTarget} onClose={cancelDelete}>
+                <DialogTitle sx={{ fontWeight: 700 }}>
+                    Delete this application?
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        {deleteTarget && (
+                            <>
+                                This will permanently remove{' '}
+                                <strong>{deleteTarget.title}</strong> at{' '}
+                                <strong>{deleteTarget.company}</strong>,
+                                along with its interviews and status history.
+                                This can't be undone.
+                            </>
+                        )}
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={cancelDelete} disabled={deleting}>
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleDelete}
+                        color="error"
+                        variant="contained"
+                        disabled={deleting}
+                        startIcon={
+                            deleting ? (
+                                <CircularProgress size={16} color="inherit" />
+                            ) : null
+                        }
+                    >
+                        {deleting ? 'Deleting…' : 'Delete'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Container>
     )
 }

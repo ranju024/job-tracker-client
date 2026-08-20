@@ -17,6 +17,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import WorkIcon from '@mui/icons-material/Work'
 import EventOutlinedIcon from '@mui/icons-material/EventOutlined'
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined'
+import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 
 
 const statusStyles = {
@@ -100,6 +101,8 @@ function Dashboard() {
     const totalCount = stats.total_applications || 0
     const activeCount = stats.active_applications || 0
     const offeredCount = stats.offers || 0
+    const rejectedCount = stats.rejected || 0
+    const responseRate = stats.response_rate ?? 0
 
     return (
         <Container maxWidth="lg" sx={{ py: { xs: 3, sm: 5 } }}>
@@ -155,7 +158,8 @@ function Dashboard() {
                     gridTemplateColumns: {
                         xs: '1fr',
                         sm: 'repeat(2, 1fr)',
-                        md: 'repeat(4, 1fr)',
+                        md: 'repeat(3, 1fr)',
+                        lg: 'repeat(6, 1fr)',
                     },
                     gap: 2,
                     mb: 3,
@@ -183,6 +187,18 @@ function Dashboard() {
                     label="Offers"
                     value={offeredCount}
                     icon={<WorkIcon />}
+                />
+
+                <StatCard
+                    label="Rejected"
+                    value={rejectedCount}
+                    icon={<WorkIcon />}
+                />
+
+                <StatCard
+                    label="Response rate"
+                    value={`${responseRate}%`}
+                    icon={<TrendingUpIcon />}
                 />
             </Box>
 

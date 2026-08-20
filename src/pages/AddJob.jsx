@@ -25,6 +25,13 @@ const statuses = [
     ['withdrawn', 'Withdrawn'],
 ]
 
+const workTypes = [
+    ['', 'Not specified'],
+    ['remote', 'Remote'],
+    ['hybrid', 'Hybrid'],
+    ['onsite', 'On-site'],
+]
+
 
 function AddJob() {
     const today = new Date().toISOString().split('T')[0]
@@ -32,6 +39,11 @@ function AddJob() {
     const [company, setCompany] = useState('')
     const [title, setTitle] = useState('')
     const [url, setUrl] = useState('')
+    const [location, setLocation] = useState('')
+    const [workType, setWorkType] = useState('')
+    const [salaryMin, setSalaryMin] = useState('')
+    const [salaryMax, setSalaryMax] = useState('')
+    const [source, setSource] = useState('')
     const [status, setStatus] = useState('applied')
     const [notes, setNotes] = useState('')
     const [date_applied, setDateApplied] = useState(today)
@@ -45,6 +57,12 @@ function AddJob() {
         e.preventDefault()
 
         setError('')
+
+        if (salaryMin && salaryMax && Number(salaryMin) > Number(salaryMax)) {
+            setError('Minimum salary cannot be greater than maximum salary.')
+            return
+        }
+
         setLoading(true)
 
         try {
@@ -52,6 +70,11 @@ function AddJob() {
                 company,
                 title,
                 url: url || null,
+                location: location || '',
+                work_type: workType || '',
+                salary_min: salaryMin || null,
+                salary_max: salaryMax || null,
+                source: source || '',
                 status,
                 notes: notes || null,
                 date_applied,
@@ -130,6 +153,36 @@ function AddJob() {
                         />
 
                         <TextField
+                            label="Location"
+                            value={location}
+                            onChange={(e) => setLocation(e.target.value)}
+                            fullWidth
+                            placeholder="e.g. Kathmandu"
+                        />
+
+                        <TextField
+                            select
+                            label="Work type"
+                            value={workType}
+                            onChange={(e) => setWorkType(e.target.value)}
+                            fullWidth
+                        >
+                            {workTypes.map(([value, label]) => (
+                                <MenuItem key={value} value={value}>
+                                    {label}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+
+                        <TextField
+                            label="Source"
+                            value={source}
+                            onChange={(e) => setSource(e.target.value)}
+                            fullWidth
+                            placeholder="e.g. LinkedIn, referral"
+                        />
+
+                        <TextField
                             select
                             label="Status"
                             value={status}
@@ -151,6 +204,24 @@ function AddJob() {
                             onChange={(e) => setDateApplied(e.target.value)}
                             fullWidth
                             InputLabelProps={{ shrink: true }}
+                        />
+
+                        <TextField
+                            label="Minimum salary"
+                            type="number"
+                            value={salaryMin}
+                            onChange={(e) => setSalaryMin(e.target.value)}
+                            fullWidth
+                            inputProps={{ min: 0, step: '0.01' }}
+                        />
+
+                        <TextField
+                            label="Maximum salary"
+                            type="number"
+                            value={salaryMax}
+                            onChange={(e) => setSalaryMax(e.target.value)}
+                            fullWidth
+                            inputProps={{ min: 0, step: '0.01' }}
                         />
 
                         <TextField
