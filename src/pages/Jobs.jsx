@@ -1,13 +1,95 @@
 import { useState, useEffect } from 'react'
 import api from '../services/api'
 import { useNavigate } from 'react-router-dom'
-import { Box, Button, Container, Typography, Paper, Select, MenuItem, FormControl, InputLabel, Grid, Chip } from '@mui/material'
+
+import {
+    Box,
+    Button,
+    Container,
+    Typography,
+    Paper,
+    Chip,
+    TextField,
+    MenuItem,
+    CircularProgress,
+    Alert,
+    IconButton,
+    Tooltip,
+} from '@mui/material'
+
+import AddIcon from '@mui/icons-material/Add'
+import EditIcon from '@mui/icons-material/Edit'
+import DeleteIcon from '@mui/icons-material/Delete'
+import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+
+
+const statuses = [
+    ['', 'All statuses'],
+    ['applied', 'Applied'],
+    ['screening', 'Screening'],
+    ['interviewing', 'Interviewing'],
+    ['offered', 'Offered'],
+    ['rejected', 'Rejected'],
+    ['ghosted', 'Ghosted'],
+    ['withdrawn', 'Withdrawn'],
+]
+
+
+const statusStyles = {
+    applied: {
+        color: '#2563eb',
+        background: '#eff6ff',
+    },
+    screening: {
+        color: '#7c3aed',
+        background: '#f5f3ff',
+    },
+    interviewing: {
+        color: '#0891b2',
+        background: '#ecfeff',
+    },
+    offered: {
+        color: '#15803d',
+        background: '#f0fdf4',
+    },
+    rejected: {
+        color: '#dc2626',
+        background: '#fef2f2',
+    },
+    ghosted: {
+        color: '#6b7280',
+        background: '#f3f4f6',
+    },
+    withdrawn: {
+        color: '#c2410c',
+        background: '#fff7ed',
+    },
+}
+
+
+function StatusChip({ status }) {
+    const style = statusStyles[status] || statusStyles.applied
+
+    return (
+        <Chip
+            label={status.charAt(0).toUpperCase() + status.slice(1)}
+            size="small"
+            sx={{
+                fontWeight: 700,
+                color: style.color,
+                backgroundColor: style.background,
+                border: 'none',
+            }}
+        />
+    )
+}
 
 
 function Jobs() {
     const [applications, setApplications] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedStatus, setSelectedStatus] = useState('')
+    const [error, setError] = useState('')
 
     const navigate = useNavigate()
 
@@ -18,94 +100,358 @@ function Jobs() {
     const fetchApplications = async () => {
         try {
             setLoading(true)
-            const url = selectedStatus ? `/api/jobs/?status=${selectedStatus}` : '/api/jobs/'
+            setError('')
+
+            const url = selectedStatus
+                ? `/api/jobs/?status=${selectedStatus}`
+                : '/api/jobs/'
+
             const response = await api.get(url)
-            setApplications(response.data.results)
+
+            setApplications(response.data.results || response.data || [])
         } catch (error) {
             console.error('Error fetching applications:', error)
+            setError('Could not load your applications.')
         } finally {
             setLoading(false)
         }
     }
 
     const handleDelete = async (id) => {
+        const confirmed = window.confirm(
+            'Are you sure you want to delete this application?'
+        )
+
+        if (!confirmed) return
+
         try {
             await api.delete(`/api/jobs/${id}/`)
             fetchApplications()
         } catch (error) {
-            console.error('Error deleting application:', error)
+            setError('Could not delete the application.')
         }
     }
 
-    if (loading) return <p>Loading...</p>
-
     return (
-        <Container maxWidth="lg" sx={{ mt: 4 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-                <Typography variant="h4">Job Applications</Typography>
-                <Button variant="contained" onClick={() => navigate('/jobs/add')}>Add Job</Button>
+        <Container maxWidth="lg" sx={{ py: { xs: 3, sm: 5 } }}>
+            {/* Header */}
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: 2,
+                    mb: 3,
+                }}
+            >
+                <Box>
+                    <Typography
+                        variant="h4"
+                        sx={{
+                            fontWeight: 800,
+                            letterSpacing: '-0.5px',
+                        }}
+                    >
+                        Applications
+                    </Typography>
+
+                    <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+                        Keep track of every opportunity in one place.
+                    </Typography>
+                </Box>
+
+                <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => navigate('/jobs/add')}
+                    sx={{
+                        py: 1.2,
+                        px: 2.5,
+                        borderRadius: 2,
+                        background: '#4f46e5',
+                        fontWeight: 700,
+                        '&:hover': {
+                            background: '#4338ca',
+                        },
+                    }}
+                >
+                    Add application
+                </Button>
             </Box>
 
-            <FormControl sx={{ mb: 3, minWidth: 200 }}>
-                <InputLabel>Filter by Status</InputLabel>
-                <Select
-                    value={selectedStatus}
-                    label="Filter by Status"
-                    onChange={(e) => setSelectedStatus(e.target.value)}
+            {/* Filters */}
+            <Paper
+                elevation={0}
+                sx={{
+                    p: 2,
+                    mb: 3,
+                    border: '1px solid #e5e7eb',
+                    borderRadius: 3,
+                }}
+            >
+                <Box
+                    sx={{
+                        display: 'flex',
+                        gap: 2,
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                    }}
                 >
-                    <MenuItem value="">All</MenuItem>
-                    <MenuItem value="applied">Applied</MenuItem>
-                    <MenuItem value="screening">Screening</MenuItem>
-                    <MenuItem value="interviewing">Interviewing</MenuItem>
-                    <MenuItem value="offered">Offered</MenuItem>
-                    <MenuItem value="rejected">Rejected</MenuItem>
-                    <MenuItem value="ghosted">Ghosted</MenuItem>
-                    <MenuItem value="withdrawn">Withdrawn</MenuItem>
-                </Select>
-            </FormControl>
+                    <TextField
+                        select
+                        label="Filter by status"
+                        value={selectedStatus}
+                        onChange={(e) => setSelectedStatus(e.target.value)}
+                        size="small"
+                        sx={{
+                            minWidth: { xs: '100%', sm: 220 },
+                        }}
+                    >
+                        {statuses.map(([value, label]) => (
+                            <MenuItem key={value} value={value}>
+                                {label}
+                            </MenuItem>
+                        ))}
+                    </TextField>
 
-            <Grid container spacing={2} alignItems="stretch">
-                {applications.map((app) => (
-                    <Grid item xs={12} sm={6} md={3} key={app.id} sx={{ display: 'flex' }}>
-                        <Paper 
-                            elevation={2} 
-                            sx={{ 
-                                p: 3,
-                                width: '100%',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'space-between',
-                                transition: 'transform 0.2s, box-shadow 0.2s',
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ ml: { sm: 'auto' } }}
+                    >
+                        {applications.length}{' '}
+                        {applications.length === 1
+                            ? 'application'
+                            : 'applications'}
+                    </Typography>
+                </Box>
+            </Paper>
+
+            {error && (
+                <Alert severity="error" sx={{ mb: 3 }}>
+                    {error}
+                </Alert>
+            )}
+
+            {/* Loading */}
+            {loading && (
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        py: 10,
+                    }}
+                >
+                    <CircularProgress />
+                </Box>
+            )}
+
+            {/* Empty */}
+            {!loading && applications.length === 0 && (
+                <Paper
+                    elevation={0}
+                    sx={{
+                        p: { xs: 4, sm: 7 },
+                        textAlign: 'center',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: 3,
+                    }}
+                >
+                    <Typography
+                        variant="h6"
+                        sx={{ fontWeight: 700, mb: 1 }}
+                    >
+                        No applications found
+                    </Typography>
+
+                    <Typography
+                        color="text.secondary"
+                        sx={{ mb: 3 }}
+                    >
+                        Start tracking your job search by adding your first
+                        application.
+                    </Typography>
+
+                    <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={() => navigate('/jobs/add')}
+                        sx={{
+                            background: '#4f46e5',
+                            fontWeight: 700,
+                        }}
+                    >
+                        Add application
+                    </Button>
+                </Paper>
+            )}
+
+            {/* Cards */}
+            {!loading && applications.length > 0 && (
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: {
+                            xs: '1fr',
+                            sm: 'repeat(2, 1fr)',
+                            md: 'repeat(3, 1fr)',
+                        },
+                        gap: 2,
+                    }}
+                >
+                    {applications.map((app) => (
+                        <Paper
+                            key={app.id}
+                            elevation={0}
+                            sx={{
+                                p: 2.5,
+                                border: '1px solid #e5e7eb',
+                                borderRadius: 3,
+                                transition: 'all 0.2s ease',
                                 '&:hover': {
-                                    transform: 'translateY(-4px)',
-                                    boxShadow: 6,
-                                    cursor: 'pointer'
-                                }
+                                    transform: 'translateY(-3px)',
+                                    boxShadow:
+                                        '0 12px 30px rgba(15, 23, 42, 0.08)',
+                                    borderColor: '#c7d2fe',
+                                },
                             }}
                         >
-                            <Box>
-                                <Typography variant="h6" fontSize="1.1rem" noWrap>{app.title}</Typography>
-                                <Typography color="text.secondary" fontSize="1rem" noWrap>{app.company}</Typography>
-                                <Chip 
-                                    label={app.status.charAt(0).toUpperCase() + app.status.slice(1)} 
-                                    color="primary" 
-                                    size="medium" 
-                                    sx={{ mt: 1, mb: 1 }} 
-                                />
-                            </Box>
-                            <Box>
-                                <Typography variant="body1" sx={{ mb: 1 }}>Applied: {app.date_applied}</Typography>
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                    <Button size="medium" variant="outlined" onClick={() => navigate(`/jobs/edit/${app.id}`)}>Edit</Button>
-                                    <Button size="medium" variant="outlined" color="error" onClick={() => handleDelete(app.id)}>Delete</Button>
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    gap: 1,
+                                }}
+                            >
+                                <Box sx={{ minWidth: 0 }}>
+                                    <Typography
+                                        variant="h6"
+                                        sx={{
+                                            fontWeight: 750,
+                                            fontSize: '1.05rem',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                    >
+                                        {app.title}
+                                    </Typography>
+
+                                    <Typography
+                                        color="text.secondary"
+                                        sx={{
+                                            mt: 0.3,
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                    >
+                                        {app.company}
+                                    </Typography>
                                 </Box>
+
+                                {app.url && (
+                                    <Tooltip title="Open job posting">
+                                        <IconButton
+                                            size="small"
+                                            component="a"
+                                            href={app.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            <OpenInNewIcon fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                )}
+                            </Box>
+
+                            <Box sx={{ mt: 2 }}>
+                                <StatusChip status={app.status} />
+                            </Box>
+
+                            <Box
+                                sx={{
+                                    mt: 2,
+                                    pt: 2,
+                                    borderTop: '1px solid #f0f0f0',
+                                }}
+                            >
+                                <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                >
+                                    Applied
+                                </Typography>
+
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        fontWeight: 600,
+                                        mt: 0.3,
+                                    }}
+                                >
+                                    {app.date_applied}
+                                </Typography>
+                            </Box>
+
+                            {app.interview_date && (
+                                <Box sx={{ mt: 1.5 }}>
+                                    <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                    >
+                                        Interview
+                                    </Typography>
+
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            fontWeight: 600,
+                                            mt: 0.3,
+                                        }}
+                                    >
+                                        {app.interview_date}
+                                    </Typography>
+                                </Box>
+                            )}
+
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    gap: 1,
+                                    mt: 2.5,
+                                }}
+                            >
+                                <Button
+                                    fullWidth
+                                    size="small"
+                                    variant="outlined"
+                                    startIcon={<EditIcon />}
+                                    onClick={() =>
+                                        navigate(`/jobs/edit/${app.id}`)
+                                    }
+                                >
+                                    Edit
+                                </Button>
+
+                                <Button
+                                    fullWidth
+                                    size="small"
+                                    variant="outlined"
+                                    color="error"
+                                    startIcon={<DeleteIcon />}
+                                    onClick={() => handleDelete(app.id)}
+                                >
+                                    Delete
+                                </Button>
                             </Box>
                         </Paper>
-                    </Grid>
-                ))}
-            </Grid>
+                    ))}
+                </Box>
+            )}
         </Container>
-)
+    )
 }
 
 export default Jobs
