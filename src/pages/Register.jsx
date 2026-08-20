@@ -48,15 +48,24 @@ function Register() {
 
             navigate('/login')
         } catch (error) {
-            const message =
-                error.response?.data?.detail ||
-                'Registration failed. Please check your details.'
+            const data = error.response?.data
 
-            setError(
-                typeof message === 'string'
-                    ? message
-                    : 'Registration failed. Please check your details.'
-            )
+            let message = 'Registration failed. Please check your details.'
+
+            if (data && typeof data === 'object') {
+                const firstKey = Object.keys(data)[0]
+                const firstValue = data[firstKey]
+
+                if (typeof firstValue === 'string') {
+                    message = firstValue
+                } else if (Array.isArray(firstValue) && firstValue.length) {
+                    message = firstValue[0]
+                } else if (typeof data.detail === 'string') {
+                    message = data.detail
+                }
+            }
+
+            setError(message)
         } finally {
             setLoading(false)
         }

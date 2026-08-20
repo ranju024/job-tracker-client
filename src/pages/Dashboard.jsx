@@ -97,12 +97,9 @@ function Dashboard() {
 
     const byStatus = stats.by_status || {}
 
-    const activeCount =
-        (byStatus.applied || 0) +
-        (byStatus.screening || 0) +
-        (byStatus.interviewing || 0)
-
-    const offeredCount = byStatus.offered || 0
+    const totalCount = stats.total_applications || 0
+    const activeCount = stats.active_applications || 0
+    const offeredCount = stats.offers || 0
 
     return (
         <Container maxWidth="lg" sx={{ py: { xs: 3, sm: 5 } }}>
@@ -166,7 +163,7 @@ function Dashboard() {
             >
                 <StatCard
                     label="Total applications"
-                    value={stats.total}
+                    value={totalCount}
                     icon={<WorkIcon />}
                 />
 
@@ -229,8 +226,8 @@ function Dashboard() {
                                         statusStyles.applied
 
                                     const percentage =
-                                        stats.total > 0
-                                            ? (count / stats.total) * 100
+                                        totalCount > 0
+                                            ? (count / totalCount) * 100
                                             : 0
 
                                     return (
@@ -330,9 +327,9 @@ function Dashboard() {
                         >
                             {stats.upcoming_interviews
                                 .slice(0, 5)
-                                .map((app) => (
+                                .map((interview) => (
                                     <Box
-                                        key={app.id}
+                                        key={interview.id}
                                         sx={{
                                             p: 1.8,
                                             borderRadius: 2,
@@ -351,14 +348,14 @@ function Dashboard() {
                                                     whiteSpace: 'nowrap',
                                                 }}
                                             >
-                                                {app.title}
+                                                {interview.application_title}
                                             </Typography>
 
                                             <Typography
                                                 variant="body2"
                                                 color="text.secondary"
                                             >
-                                                {app.company}
+                                                {interview.application_company}
                                             </Typography>
                                         </Box>
 
@@ -370,7 +367,14 @@ function Dashboard() {
                                                 whiteSpace: 'nowrap',
                                             }}
                                         >
-                                            {app.interview_date}
+                                            {new Date(
+                                                interview.scheduled_at
+                                            ).toLocaleString(undefined, {
+                                                month: 'short',
+                                                day: 'numeric',
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                            })}
                                         </Typography>
                                     </Box>
                                 ))}

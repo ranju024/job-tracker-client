@@ -35,6 +35,23 @@ const statuses = [
 ]
 
 
+function getNextInterview(app) {
+    const interviews = app.interviews || []
+
+    const upcoming = interviews
+        .filter(
+            (interview) =>
+                new Date(interview.scheduled_at) >= new Date()
+        )
+        .sort(
+            (a, b) =>
+                new Date(a.scheduled_at) - new Date(b.scheduled_at)
+        )
+
+    return upcoming[0] || null
+}
+
+
 const statusStyles = {
     applied: {
         color: '#2563eb',
@@ -395,13 +412,13 @@ function Jobs() {
                                 </Typography>
                             </Box>
 
-                            {app.interview_date && (
+                            {getNextInterview(app) && (
                                 <Box sx={{ mt: 1.5 }}>
                                     <Typography
                                         variant="body2"
                                         color="text.secondary"
                                     >
-                                        Interview
+                                        Next interview
                                     </Typography>
 
                                     <Typography
@@ -411,7 +428,12 @@ function Jobs() {
                                             mt: 0.3,
                                         }}
                                     >
-                                        {app.interview_date}
+                                        {new Date(
+                                            getNextInterview(app).scheduled_at
+                                        ).toLocaleString(undefined, {
+                                            dateStyle: 'medium',
+                                            timeStyle: 'short',
+                                        })}
                                     </Typography>
                                 </Box>
                             )}

@@ -35,7 +35,6 @@ function AddJob() {
     const [status, setStatus] = useState('applied')
     const [notes, setNotes] = useState('')
     const [date_applied, setDateApplied] = useState(today)
-    const [interview_date, setInterviewDate] = useState('')
 
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
@@ -56,7 +55,6 @@ function AddJob() {
                 status,
                 notes: notes || null,
                 date_applied,
-                interview_date: interview_date || null,
             })
 
             navigate('/jobs')
@@ -151,15 +149,6 @@ function AddJob() {
                             type="date"
                             value={date_applied}
                             onChange={(e) => setDateApplied(e.target.value)}
-                            fullWidth
-                            InputLabelProps={{ shrink: true }}
-                        />
-
-                        <TextField
-                            label="Interview date"
-                            type="date"
-                            value={interview_date}
-                            onChange={(e) => setInterviewDate(e.target.value)}
                             fullWidth
                             InputLabelProps={{ shrink: true }}
                         />
